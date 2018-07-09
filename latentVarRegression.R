@@ -66,8 +66,7 @@ colSumsLog <- function(x){
 #' @return list of two: pars_new are new parameter estimates (effects and sd) and mll_new is the updated minus log likelihood
 update_em_lm_log<-function(pars, phen, dsgn, prior,nLatent=3) {
   ## joint pheno and state posterior prob
-  joint_pheno_state_log <- make_joint_lm_log(pars = pars, phe = phen,
-                                        desi = dsgn, prior = prior)
+  joint_pheno_state_log <- make_joint_lm_log(pars = pars, phe = phen, desi = dsgn, prior = prior)
   prob_pheno_log <- colSumsLog(joint_pheno_state_log)
   mll_new<- -sum(prob_pheno_log)
   df <- length(phen)/nLatent-ncol(dsgn)
@@ -129,7 +128,7 @@ update_em_bin <- function(pars, phen, dsgn, prior) {
 #' @return list of par (estimates), value (minus log likelihood), counts (iterations), convergence and about (how did algo terminate)
 
 
-control_em <- function(phe, desi, pri, qua, tole=1e-6,start, maxI=100){
+control_em <- function(phe, desi, pri, qua, tole=1e-4,start, maxI=100){
 
     if(missing(start)){
         start <- rnorm(ncol(desi))
@@ -185,7 +184,7 @@ lmLatent<-function(y,xp,z){
     
     N<-length(y)
     nLatent<-nrow(xp)
-    phe <- rep(y,nLatent)
+    phe <- rep(y,each=nLatent)
     pri <- as.vector(xp)
     qua <- TRUE
     nPara <- ncol(Xe)
@@ -194,7 +193,7 @@ lmLatent<-function(y,xp,z){
     
     desi <- cbind(rep(1:nLatent-1,N),desi)
     
-  control_em(phe, desi, pri, qua, tole,start, maxI=100){
+  control_em(phe, desi, pri, qua)
   
 }
 
@@ -399,37 +398,58 @@ getPost <- function(GL,f){
 }
 
 
-N <- 100000
-f <- 0.2
-sd=0.4
-G<-rbinom(N,2,f)
-beta <- 0.75
-beta <- 0.015
-## beta <- 0
-y<-rnorm(N,sd=sd) + G*beta
+if(FALSE){
+    source("latentVarRegression.R")
+
+    N <- 100000
+    f <- 0.2
+    sd=0.4
+    G<-rbinom(N,2,f)
+    beta <- 0.75
+    beta <- 0.015
+    ## beta <- 0
+    y<-rnorm(N,sd=sd) + G*beta
 
 
-## 3 x N
-GL <- getLikes(G,d=3,norm=T)
-## GL <- getLikes(G,d<-1+5*rank(y)/length(y),norm=T)
+    ## 3 x N
+    GL <- getLikes(G,d=3,norm=T)
+    ## GL <- getLikes(G,d<-1+5*rank(y)/length(y),norm=T)
 
 
-## est freq
-f.ml<- estPem(GL)#EM
+    ## est freq
+    f.ml<- estPem(GL)#EM
 
-## post
-PP <- getPost(GL,f)
+    ## post
+    PP <- getPost(GL,f)
 
-## dosage
-EG <- PP[2,]+2*PP[3,]
+    ## dosage
+    EG <- PP[2,]+2*PP[3,]
+    
+    ## best
+    best<-(PP[1,]<PP[2,]|PP[1,]<PP[3,])+(PP[2,]<PP[3,]&PP[1,]<PP[3,])
 
-## best
-best<-(PP[1,]<PP[2,]|PP[1,]<PP[3,])+(PP[2,]<PP[3,]&PP[1,]<PP[3,])
+    #TRUE
+    coef(lg <- lm(y~G))["G"]
+    #dosage
+    coef(le <- lm(y~EG))["EG"]
+    #Weighted reg
+    coef(lw <- lm(rep(y,each=3)~rep(0:2,N),weights=as.vector(PP)))[2]
+    ## highest GL (calling)
+    coef(lb <- lm(y~best))["best"]
+    ## full latent
+    system.time(    ll <- lmFull(y,PP));    ll$par["beta"] 
+    ## full latent EM
+    system.time(ll2 <- lmLatent(y,PP))
 
-coef(lg <- lm(y~G))["G"]
-coef(le <- lm(y~EG))["EG"]
-coef(lw <- lm(rep(y,each=3)~rep(0:2,N),weights=as.vector(PP)))[2]
-coef(lb <- lm(y~best))["best"]
-ll <- lmFull(y,PP);ll$par["beta"]
+    getPval <- function(x) summary(x)$coefficients[2,4]
 
-getPval <- function(x) summary(x)$coefficients[2,4]
+
+
+
+
+
+
+
+
+  
+}
