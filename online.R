@@ -526,19 +526,24 @@ manPlot <- function( x, chr, thinLarge=TRUE,thinTo=2e4,pass,cap=1e-30, collar = 
      
  }
 
-
-roc<-function(y,p){
-p<--p
-y<-y[order(p)]
-y2<-y!=levels(y)[1]
-sen<-cumsum(y2)/sum(y2)
- FP<-cumsum(!y2) / sum(!y2)
- plot(FP,sen,type="l")
-
-abline(0,1)
-
+roc<-function(y,p,add=F,...){
+  
+  y<-y[order(-p)]
+  if(is.factor(y))
+    y<-y!=levels(y)[1]
+  else
+    y <- y>min(y)
+  
+  sen<-cumsum(y)/sum(y)
+  FP<-cumsum(!y) / sum(!y)
+  if(add){
+    lines(FP,sen,...)
+    return()
+  }
+  plot(FP,sen,type="l",...)
+  abline(0,1)
+  
 }
-
 qqPlot <- function( x, cap=1e-30,main = "" ){
         keep <- !is.na( x )
         x <- x[keep]
