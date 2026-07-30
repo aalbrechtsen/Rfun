@@ -28,9 +28,11 @@ Rscript aaplot_github/make_figures.R
 The three examples below use the same data loading, ordering, and population-label setup.
 
 ```r
+# Load the aaplot helper functions and evalAdmix ordering function.
 source("https://raw.githubusercontent.com/aalbrechtsen/Rfun/master/aaplot_github/aaplot_functions.R")
 source("https://raw.githubusercontent.com/GenisGE/evalAdmix/master/visFuns.R")
 
+# Read admixture proportions, population labels, and residual correlations.
 data_prefix <- "evalAdmix/data/admixTjeck2"
 cor_file <- "aaplot_github/figures/admixTjeck2.corres.txt"
 
@@ -38,12 +40,14 @@ pop <- read.table(paste0(data_prefix, ".fam"), stringsAsFactors = FALSE)
 q <- read.table(paste0(data_prefix, ".3.Q"))
 cor_mat <- as.matrix(read.table(cor_file))
 
+# Use the same individual order for the admixture and correlation plots.
 pop_id <- pop[, 2]
 ord <- orderInds(pop = as.vector(pop_id), q = q)
 q <- q[ord, ]
 pop_id <- pop_id[ord]
 cor_mat <- cor_mat[ord, ord]
 
+# Precompute population positions for labels and separator lines.
 Q <- t(q)
 pop_names <- unique(pop_id)
 pop_id_int <- rep(seq_along(pop_names), table(pop_id)[pop_names])
@@ -61,9 +65,11 @@ colorpal <- c(
 The admixture barplot is shown below the pairwise residual correlation diamonds.
 
 ```r
+# Open the output PNG and reserve extra top margin for correlations.
 png("aaplot_github/figures/aaplot_correlations_above.png", width = 2000, height = 2000, res = 200)
 par(mar = c(5.1, 4.1, 10.1, 2.1))
 
+# Draw the admixture barplot.
 x <- barplot(
   Q, col = colorpal, space = 0, border = NA, axisnames = FALSE,
   ylab = "Admixture proportions", xlab = "", main = "", xpd = NA,
@@ -72,6 +78,8 @@ x <- barplot(
 text(mean_pop_x, rep(-0.05, length(mean_pop_x)), unique(pop_id), xpd = TRUE, font = 2, cex = 1.5)
 abline(v = pop_sep)
 text(mean(x), 1.35, "Residual correlations above admixture proportions", font = 2, cex = 1.8, xpd = TRUE)
+
+# Add the evalAdmix color key and individual-pair correlations above the bars.
 addKey(from = 1, to = 1.3, N = ncol(Q), maxCor = 0.1)
 addCor(cor_mat, from = 1, to = 1.3, maxCor = 0.1, lines = 0.2, popID = pop_id)
 
@@ -85,9 +93,11 @@ dev.off()
 The same residual correlations can be placed below the admixture barplot by changing the `from` and `to` coordinates supplied to `addKey()` and `addCor()`.
 
 ```r
+# Open the output PNG and reserve extra bottom margin for correlations.
 png("aaplot_github/figures/aaplot_correlations_below.png", width = 2000, height = 2000, res = 200)
 par(mar = c(11.1, 4.1, 4.1, 2.1))
 
+# Draw the admixture barplot.
 x <- barplot(
   Q, col = colorpal, space = 0, border = NA, axisnames = FALSE,
   ylab = "Admixture proportions", xlab = "", main = "", xpd = NA,
@@ -95,6 +105,8 @@ x <- barplot(
 )
 text(mean_pop_x, rep(1.05, length(mean_pop_x)), unique(pop_id), xpd = TRUE, font = 2, cex = 1.5)
 abline(v = pop_sep)
+
+# Negative y coordinates place the correlation panel below the bars.
 addKey(from = 0, to = -0.3, N = ncol(Q), maxCor = 0.1)
 addCor(cor_mat, from = 0, to = -0.3, maxCor = 0.1, lines = 0.2, popID = pop_id)
 
@@ -108,15 +120,19 @@ dev.off()
 This view combines individual residual correlations above the admixture plot with population-mean residual correlations below it.
 
 ```r
+# Open the output PNG with room above and below the barplot.
 png("aaplot_github/figures/aaplot_individual_and_mean_correlations.png", width = 2000, height = 2000, res = 200)
 par(mar = c(9.1, 4.1, 8.1, 2.1))
 
+# Draw the admixture barplot.
 x <- barplot(
   Q, col = colorpal, space = 0, border = NA, axisnames = FALSE,
   ylab = "Admixture proportions", xlab = "", main = "", xpd = NA,
   cex.axis = 1.2, cex.lab = 1.8, cex.main = 1.5
 )
 abline(v = pop_sep)
+
+# Draw individual correlations above and population-mean correlations below.
 addKey(from = 1, to = 1.3, N = ncol(Q), maxCor = 0.1)
 addCor(cor_mat, from = 1, to = 1.3, maxCor = 0.1, lines = 0.2, popID = pop_id)
 addCor(cor_mat, from = -0.1, to = -0.4, maxCor = 0.1, lines = 0.2, popID = pop_id, meanCor = TRUE)

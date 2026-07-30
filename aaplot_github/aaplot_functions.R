@@ -1,6 +1,7 @@
 makeCol <- function(nHalf = 10) {
   color_palette <- c("#001260", "#EAEDE9", "#601200")
 
+  # Build a blue-white-red color scale centered on zero.
   rc1 <- colorRampPalette(colors = color_palette[1:2], space = "Lab")(nHalf)
   rc2 <- colorRampPalette(colors = color_palette[2:3], space = "Lab")(nHalf)
   rampcols <- c(rc1, rc2)
@@ -9,6 +10,7 @@ makeCol <- function(nHalf = 10) {
 }
 
 getMean <- function(mat, id) {
+  # Average pairwise correlations for each pair of groups.
   uid <- unique(id)
   m <- matrix(NA, length(uid), length(uid), dimnames = list(uid, uid))
   for (i in uid) {
@@ -20,6 +22,7 @@ getMean <- function(mat, id) {
 }
 
 getColor <- function(val, corColors, maxCor = 0.25) {
+  # Truncate extreme correlations before assigning colors.
   Nc <- length(corColors)
   val <- ifelse(val < -maxCor, -maxCor, val)
   val <- ifelse(val > maxCor, maxCor, val)
@@ -36,6 +39,7 @@ addKey <- function(from, to, N, maxCor = 0.1, corColors) {
     )
   }
 
+  # Place the legend in the same coordinate system as the barplot.
   y0 <- (to - from) * 0.6 + from
   y1 <- (to - from) * 0.75 + from
   y2 <- (to - from) * 0.9 + from
@@ -65,11 +69,13 @@ addCor <- function(corMat, from = 1, to = 1.2, popID, withinOnly = FALSE,
   }
 
   N <- ncol(corMat)
+  # Map correlation diamonds into the requested vertical plotting band.
   y <- from + (seq_len(N) / N) * (to - from)
   ySize <- diff(y[1:2]) / 2
   xSize <- diff(x[1:2]) / 2
 
   if (meanCor) {
+    # Replace individual-pair values with population-pair means.
     mCor <- getMean(corMat, popID)
     intID <- match(popID, unique(popID))
     for (i in seq_len(N - 1)) {
@@ -79,6 +85,7 @@ addCor <- function(corMat, from = 1, to = 1.2, popID, withinOnly = FALSE,
     }
   }
 
+  # Draw each upper-triangle pair as a diamond above or below the barplot.
   for (i in 2:(N - 1)) {
     cat("\r", i)
     for (j in (i + 1):N) {
@@ -99,6 +106,7 @@ addCor <- function(corMat, from = 1, to = 1.2, popID, withinOnly = FALSE,
   }
 
   if (lines > 0) {
+    # Draw population boundary lines through the triangular panel.
     popSep <- c(0, cumsum(table(popID)[unique(popID)]))
     popSepR <- rev(popSep)
     N <- max(popSep)
