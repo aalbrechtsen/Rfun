@@ -26,7 +26,7 @@ getColor <- function(val, corColors, maxCor = 0.25) {
   Nc <- length(corColors)
   val <- ifelse(val < -maxCor, -maxCor, val)
   val <- ifelse(val > maxCor, maxCor, val)
-  corColors[cut(val, seq(-maxCor, maxCor, length.out = Nc), include.lowest = TRUE)]
+  corColors[cut(val, seq(-maxCor, maxCor, length.out = Nc + 1), include.lowest = TRUE)]
 }
 
 addKey <- function(from, to, N, maxCor = 0.1, corColors) {
@@ -86,7 +86,7 @@ addCor <- function(corMat, from = 1, to = 1.2, popID, withinOnly = FALSE,
   }
 
   # Draw each upper-triangle pair as a diamond above or below the barplot.
-  for (i in 2:(N - 1)) {
+  for (i in seq_len(N - 1)) {
     cat("\r", i)
     for (j in (i + 1):N) {
       if (withinOnly && popID[i] != popID[j]) {
@@ -108,11 +108,12 @@ addCor <- function(corMat, from = 1, to = 1.2, popID, withinOnly = FALSE,
   if (lines > 0) {
     # Draw population boundary lines through the triangular panel.
     popSep <- c(0, cumsum(table(popID)[unique(popID)]))
-    popSepR <- rev(popSep)
     N <- max(popSep)
-    for (i in 2:(length(popSep) - 1)) {
-      lines(c(x[popSep[i] + 1], x[(N - popSep[i]) / 2 + popSep[i]] + xSize), y[c(1, N - popSep[i])], xpd = TRUE, lwd = lines)
-      lines(c(x[popSepR[i]], (x[popSepR[i]] + xSize) / 2), y[c(1, popSepR[i])], xpd = TRUE, lwd = lines)
+    for (s in popSep[-c(1, length(popSep))]) {
+      right_edge <- c(x[s + 1], (x[s] + x[N]) / 2 + xSize)
+      left_edge <- c(x[s], (x[1] + x[s + 1]) / 2 - xSize)
+      lines(right_edge, y[c(1, N - s)], xpd = TRUE, lwd = lines)
+      lines(left_edge, y[c(1, s)], xpd = TRUE, lwd = lines)
     }
   }
 }
