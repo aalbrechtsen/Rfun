@@ -13,7 +13,7 @@ repo_root <- normalizePath(file.path(script_dir, ".."), mustWork = TRUE)
 fig_dir <- file.path(script_dir, "figures")
 dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 
-source(file.path(repo_root, "aaplot.R"))
+source(file.path(script_dir, "aaplot_functions.R"))
 source(file.path(repo_root, "evalAdmix", "visFuns.R"))
 
 data_prefix <- file.path(repo_root, "evalAdmix", "data", "admixTjeck2")
