@@ -28,8 +28,8 @@ Rscript aaplot_github/make_figures.R
 The three examples below use the same data loading, ordering, and population-label setup.
 
 ```r
-source("aaplot_github/aaplot_functions.R")
-source("evalAdmix/visFuns.R")
+source("https://raw.githubusercontent.com/aalbrechtsen/Rfun/master/aaplot_github/aaplot_functions.R")
+source("https://raw.githubusercontent.com/GenisGE/evalAdmix/master/visFuns.R")
 
 data_prefix <- "evalAdmix/data/admixTjeck2"
 cor_file <- "aaplot_github/figures/admixTjeck2.corres.txt"
