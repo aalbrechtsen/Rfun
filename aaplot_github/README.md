@@ -23,6 +23,12 @@ All figures can be regenerated from the repository root with:
 Rscript aaplot_github/make_figures.R
 ```
 
+The population separator lines can be checked with a smaller subset, which keeps only five individuals per population:
+
+```bash
+Rscript aaplot_github/check_small_subset.R
+```
+
 ## Shared setup
 
 The three examples below use the same data loading, ordering, and population-label setup.
@@ -143,3 +149,9 @@ dev.off()
 ```
 
 ![Admixture proportions with individual and mean evalAdmix residual correlations](figures/aaplot_individual_and_mean_correlations.png)
+
+## Small-subset line check
+
+This diagnostic plot keeps only five individuals per population. With this small number of individuals, separator-line errors are much easier to see.
+
+![Small-subset check of population separator lines](figures/aaplot_small_subset_line_check.png)

@@ -110,10 +110,14 @@ addCor <- function(corMat, from = 1, to = 1.2, popID, withinOnly = FALSE,
     popSep <- c(0, cumsum(table(popID)[unique(popID)]))
     N <- max(popSep)
     for (s in popSep[-c(1, length(popSep))]) {
-      right_edge <- c(x[s + 1], (x[s] + x[N]) / 2 + xSize)
-      left_edge <- c(x[s], (x[1] + x[s + 1]) / 2 - xSize)
-      lines(right_edge, y[c(1, N - s)], xpd = TRUE, lwd = lines)
-      lines(left_edge, y[c(1, s)], xpd = TRUE, lwd = lines)
+      x_min <- x[1] - xSize
+      x_max <- x[N] + xSize
+      x_sep <- (x[s] + x[s + 1]) / 2
+      y_sep <- from
+      left_edge <- c(x_sep, (x_min + x_sep) / 2)
+      right_edge <- c(x_sep, (x_sep + x_max) / 2)
+      lines(left_edge, c(y_sep, from + (s / N) * (to - from)), xpd = TRUE, lwd = lines)
+      lines(right_edge, c(y_sep, from + ((N - s) / N) * (to - from)), xpd = TRUE, lwd = lines)
     }
   }
 }
