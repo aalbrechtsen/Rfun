@@ -50,7 +50,3 @@ res$theta_w
 ```
 
 Weir, B. S. and Cockerham, C. C. (1984). Estimating F-statistics for the analysis of population structure. *Evolution* 38(6): 1358–1370.
-
-## LD pruning
-
-The old wiki also linked to an R package for LD pruning (`pruning_0.51.tar.gz`, 2007). It no longer compiles with current R, so it is not included here.
