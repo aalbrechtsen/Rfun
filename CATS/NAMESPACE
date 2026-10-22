@@ -1,0 +1,5 @@
+export(cats,print.CATS,summary.CATS,super.cats,plot.supercats,lines.cats,curve.cats)
+S3method(print,CATS)
+S3method(summary,CATS)
+S3method(plot,supercats)
+useDynLib(CATS)

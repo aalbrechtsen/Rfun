@@ -1,0 +1,14 @@
+Package: CATS
+Type: Package
+Title: Joint power analysis for non-symetric two-stage case-control
+        designs for SNP data
+Version: 1.03
+Date: 2026-10-22
+Author: Anders Albrechtsen
+Maintainer: Anders Albrechtsen <albrecht@binf.ku.dk>
+Description: Joint power analysis for two-stage designs for SNP data. Generalized so that the ratios between the cases and controls, the allele frequencies and the relative risk can vary between stages 
+Reference: Skol AD, Scott LJ, Abecasis GR, Boehnke M: Joint analysis is
+        more efficient than replication-based analysis for two-stage
+        genome-wide association studies. Nat Genet 38: 209-213, 2006
+License: GPL
+Packaged: 2015-08-06 16:53:53 UTC; albrecht
