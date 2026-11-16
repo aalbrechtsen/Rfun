@@ -1,0 +1,1178 @@
+<title>Repeated Samples in Diet RDA</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~70ch) with full-width figure panels; figures scroll sideways on phones */
+:root {
+  --bg: #f7f8f9;
+  --surface: #ffffff;
+  --fg: #1b2228;
+  --muted: #5b6670;
+  --rule: #d9dee3;
+  --accent: #1f6f78;
+  --naive: #c8433a;
+  --block: #c48a12;
+  --means: #1f7a5a;
+  --within: #3d5fa8;
+  --ref: #8a949d;
+  --hl: #fdecea;
+  --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12171b; --surface: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --rule: #2c353d;
+  --accent: #5fb7bf; --naive: #f0776c; --block: #e2b54a; --means: #4fbf91; --within: #8aa6ea;
+  --ref: #77828c; --hl: #3a2422; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12171b; --surface: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --rule: #2c353d;
+  --accent: #5fb7bf; --naive: #f0776c; --block: #e2b54a; --means: #4fbf91; --within: #8aa6ea;
+  --ref: #77828c; --hl: #3a2422; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 16px/1.6 var(--sans); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 40px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.prose { max-width: 70ch; }
+header { display: grid; gap: 10px; padding-bottom: 24px; border-bottom: 1px solid var(--rule); margin-bottom: 32px; }
+.eyebrow { font: 500 12px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 600 clamp(28px, 4.5vw, 40px)/1.15 var(--serif); margin: 0; text-wrap: balance; }
+h2 { font: 600 24px/1.25 var(--serif); margin: 48px 0 12px; text-wrap: balance; }
+h3 { font: 600 16px/1.35 var(--sans); margin: 28px 0 8px; }
+p { margin: 0 0 14px; }
+.lede { font-size: 18px; color: var(--fg); max-width: 68ch; }
+.meta { color: var(--muted); font-size: 14px; }
+a { color: var(--accent); }
+code, .num { font-family: var(--mono); font-size: .92em; }
+.num { font-variant-numeric: tabular-nums; }
+
+.keyfind { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 8px 0 8px; }
+.kf { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; display: grid; gap: 6px; align-content: start; }
+.kf .big { font: 500 28px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+.kf .big.bad { color: var(--naive); } .kf .big.ok { color: var(--means); }
+.kf .lbl { font-size: 14px; color: var(--muted); }
+
+figure { margin: 24px 0 8px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 18px 14px; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; max-width: 80ch; }
+figcaption b { color: var(--fg); font-weight: 600; }
+.plot { display: block; width: 100%; height: auto; border-radius: 4px; }
+.chartbox { overflow-x: auto; }
+.chartbox svg { display: block; min-width: 620px; width: 100%; height: auto; }
+.panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; }
+.panels > div { min-width: 0; }
+.panel-title { font: 600 13px/1.3 var(--sans); color: var(--fg); margin: 0 0 4px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+svg text { font-family: var(--sans); font-size: 12px; fill: var(--muted); }
+svg .tick { stroke: var(--rule); stroke-width: 1; }
+svg .axis { stroke: var(--muted); stroke-width: 1; }
+svg .refline { stroke: var(--ref); stroke-dasharray: 4 4; stroke-width: 1.2; }
+svg .reflab { fill: var(--muted); font-size: 11px; }
+svg .truth { stroke: var(--fg); stroke-width: 2; }
+svg .glabel { fill: var(--fg); font-size: 12px; }
+svg .gsub { font-size: 11px; }
+svg .band { fill: var(--bg); }
+
+.tablebox { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; font-size: 14px; min-width: 560px; width: 100%; }
+th, td { padding: 6px 10px; border-bottom: 1px solid var(--rule); text-align: right; font-variant-numeric: tabular-nums; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+th:first-child, td:first-child { text-align: left; }
+td.bad { color: var(--naive); font-weight: 600; }
+td.mono, td.num { font-family: var(--mono); font-size: 13px; }
+
+.model { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 18px; font: 14px/1.8 var(--mono); overflow-x: auto; }
+dl.methods { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 12px 0; }
+dl.methods dt { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+dl.methods dd { margin: 0; color: var(--fg); }
+dl.methods i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+@media (max-width: 560px) { dl.methods { grid-template-columns: 1fr; } dl.methods dd { margin-bottom: 8px; } }
+
+blockquote.suggest { margin: 12px 0; padding: 14px 18px; background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; }
+ul { padding-left: 20px; margin: 0 0 14px; } li { margin-bottom: 6px; }
+.files code { word-break: break-all; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Simulation report · Distance-based RDA · 16 Nov 2026</div>
+  <h1>Ignoring repeated samples inflates diet–microbiome RDA</h1>
+  <p class="lede">Dubois et al. (2017) analysed 128 repeated samples from 24 people with distance-based RDA, but treated the samples as independent. These simulations test what that does to significance and to the adjusted R² when diet has no effect, and when it has a known one.</p>
+  <p class="meta">Dubois, Girard, Lapointe &amp; Shapiro (2017). The Inuit gut microbiome is dynamic over time and shaped by traditional foods. <i>Microbiome</i> 5:151. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5689144/">PMC5689144</a></p>
+</header>
+
+<section class="prose">
+<h2 style="margin-top:0">Summary</h2>
+</section>
+<div class="keyfind">
+  <div class="kf"><div class="big bad">98–100%</div><div class="lbl">of null datasets give p &lt; 0.05 for diet when samples are treated as independent and both diet and microbiome are moderately to strongly correlated within people</div></div>
+  <div class="kf"><div class="big bad">+0.04 to +0.21</div><div class="lbl">mean adjusted R² for a diet with no effect (truth = 0), depending on within-person correlation and the number of diet variables</div></div>
+  <div class="kf"><div class="big ok">≈ 5%</div><div class="lbl">false-positive rate when whole individuals are permuted (ID permutation) or individual means are analysed</div></div>
+</div>
+<section class="prose">
+<ul>
+  <li><b>Significance.</b> Freely permuting samples assumes each sample is independent. When diet and microbiome are both stable within a person, between-person differences in the microbiome line up with between-person differences in diet by chance, and the free permutation test counts each person's samples as separate evidence. The false-positive rate goes from 5% to near 100%.</li>
+  <li><b>Explained variation.</b> The adjusted R² corrects for the number of predictors assuming independent samples, so it does not remove this chance between-person fit. With no diet effect it averages 0.04–0.10 for five diet variables and 0.21 for ten. With a true effect, the naive adjusted R² carries the same bias on top of the true value. In these simulations the bias is upward.</li>
+  <li><b>Remedies.</b> Permuting whole individuals (ID permutation) fixes the p-value but not the R². Analysing individual means fixes both, at the cost of power, because it uses one observation per person.</li>
+  <li><b>Matched to Dubois et al.</b> With their design and analysis (128 samples, 16 diet variables, square-root UniFrac), a diet with no effect beyond geography gets p &lt; 0.05 in 100% of naive analyses once diet habits are even modestly stable within people. Its naive adjusted R² is 0.05–0.13 given geography and 0.07–0.18 within Nunavut, bracketing the reported 6.4% and 17%.</li>
+</ul>
+
+<h2>The study design and the problem</h2>
+<p>Dubois et al. followed 15 Inuit participants in Resolute Bay (Nunavut) and 9 people in Montréal, with toilet-paper samples taken about monthly: 128 samples, a mean of 5.3 per person. The number of samples per person is not reported; Table S1 lists 61 samples collected in Nunavut, which suggests about 4 per Nunavut participant and 7–8 per Montréal participant. With each sample, a questionnaire recorded how often food categories were eaten in the previous 48 h. These were pooled into categories (Table S3), and the RDA in their Figure 3b has 16 of them. The mean frequency per day of each category, centred and scaled, was the set of explanatory variables. The response was square-root-transformed unweighted UniFrac distances, analysed by RDA in vegan, with adjusted R² and permutation tests with 9,999 permutations.</p>
+<p>They report three diet results, all from this RDA on all of a group's samples:</p>
+<ul>
+  <li><b>Diet, all participants:</b> adjusted R² = 0.11, p = 0.001 (their Figure 3b).</li>
+  <li><b>Diet after controlling for geography</b> (partial RDA): adjusted R² = 0.064, p = 0.001 (text only).</li>
+  <li><b>Diet, Nunavut participants only:</b> adjusted R² = 0.169, p = 0.004 (text only).</li>
+</ul>
+<p>Individual identity explained 45% of unweighted UniFrac variation and geography 4% (their Figure 2, permanova). The methods do not mention individual in the RDA or any restriction of the permutations, so the permutations were presumably free (the vegan default).</p>
+<h3>Which figure corresponds to which result</h3>
+<div class="tablebox"><table>
+<thead><tr><th>Dubois et al. result</th><th>Their analysis</th><th>Matched simulation in this report</th></tr></thead>
+<tbody>
+<tr><td>Diet, adjusted R² = 0.11</td><td>RDA of diet on all 128 samples, free permutation (their Figure 3b)</td><td>Figure 4, left panel, blue points</td></tr>
+<tr><td>Diet given geography, 0.064</td><td>Partial RDA, geography as condition</td><td>Figure 4, middle panel, blue points; Figure 5, left</td></tr>
+<tr><td>Diet, Nunavut only, 0.169</td><td>RDA of diet on the Nunavut samples</td><td>Figure 4, right panel, blue points; Figure 5, right</td></tr>
+</tbody></table></div>
+<p>Figures 1–3 are simpler simulations with no geography. Their blue points use the same analysis as the paper (RDA of diet on all samples with free permutation). Figures 1–2 use 24 people with equal numbers of samples and Euclidean distance, to show how the bias depends on the within-person correlations, the number of samples and the number of diet variables. Figure 3 uses the paper's sample sizes (128 samples from 24 people) and 16 diet variables, with UniFrac distances.</p>
+<p>That matters because both sides of the regression are clustered. Individual identity dominates the microbiome, and dietary habits are also stable within people. Samples from the same person are then not independent pieces of evidence about the diet–microbiome association.</p>
+
+<h2>Simulation design</h2>
+<p>Each simulated dataset has 24 individuals with <i>k</i> samples each and <i>p</i> diet variables. Diet and a 20-dimensional latent microbiome are generated with an individual component and a sample component:</p>
+<div class="model">d<sub>ij</sub> = √ρ<sub>d</sub> · a<sub>i</sub> + √(1−ρ<sub>d</sub>) · e<sub>ij</sub><br>z<sub>ij</sub> = d<sub>ij</sub>Γ + √ρ<sub>y</sub> · b<sub>i</sub> + √(1−ρ<sub>y</sub>) · w<sub>ij</sub></div>
+<p>Three separate quantities are set in each scenario:</p>
+<ul>
+  <li><b>ρ<sub>d</sub> = cor(diet | ID), within-individual correlation of diet:</b> the correlation between two diet records from the same person, or equivalently the share of diet variance that lies between people (stable habits). It is about diet only.</li>
+  <li><b>ρ<sub>y</sub> = cor(microbiome | ID), within-individual correlation of the gut microbiome:</b> the correlation between two microbiome samples from the same person, the share of microbiome variance that lies between people. It is about the microbiome only.</li>
+  <li><b>Diet effect, the true diet–microbiome association:</b> Γ, scaled so diet explains a chosen share of microbiome variation in the population (true R²). It is 0 (no effect) unless stated, and 0.05 or 0.11 in the true-effect scenarios.</li>
+</ul>
+<p>The first two are independent of the third. With no diet effect, the individual parts of diet (a<sub>i</sub>) and microbiome (b<sub>i</sub>) are drawn independently, so any diet–microbiome association a method reports is spurious. Distances are Euclidean on <i>z</i>. For the UniFrac runs, <i>z</i> sets the log-abundances of 300 taxa on a random tree, counts are drawn at depth 3,000, and unweighted UniFrac is computed from presence and absence. Each scenario has 1,000 replicates (500 for UniFrac) and 499 permutations per test.</p>
+<p>Three analyses are compared on every dataset:</p>
+<dl class="methods">
+  <dt><i style="background:var(--naive)"></i>RDA (Dubois et al.)</dt><dd>RDA on all samples, rows permuted freely, as described in the paper. Called the naive analysis below.</dd>
+  <dt><i style="background:var(--block)"></i>RDA (ID permutation)</dt><dd>The same RDA, but the permutation test moves whole individuals, keeping each person's samples together. Not used by Dubois et al. It changes only the p-value: its R² is identical to the paper's RDA, so it appears only in the false-positive figure (Figure 5).</dd>
+  <dt><i style="background:var(--means)"></i>Individual means</dt><dd>RDA of each person's microbiome centroid on their mean diet (n = 24). This tests between-person association.</dd>
+</dl>
+<p>All three were checked against vegan (<code>rda</code>, <code>varpart</code>, <code>RsquareAdj</code>) and the UniFrac code against phyloseq; R² and adjusted R² match exactly.</p>
+
+<h2>No diet effect</h2>
+<p>Here the true diet–microbiome association is 0 and only the two within-individual correlations vary. The naive test stays at the nominal 5% when either ρ<sub>d</sub> or ρ<sub>y</sub> is 0. Once both are above 0 it gives p &lt; 0.05 in nearly every dataset (98% at ρ<sub>d</sub> = ρ<sub>y</sub> = 0.5, 100% at 0.8). RDA with ID permutation and the individual-means analysis stay at 4–6% throughout.</p>
+<p>The adjusted R² should average 0. Naive RDA gives positive values that grow with ρ<sub>d</sub> × ρ<sub>y</sub>. Permuting individuals does not change the estimate, so it inherits the same bias. Individual means are unbiased.</p>
+</section>
+
+<figure>
+  <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' role='img' aria-label='Mean adjusted R2 under no diet effect' style='width:100%;height:auto;display:block' viewBox='0 0 675.00 315.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA='>
+    <rect x='0.00' y='0.00' width='675.00' height='315.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI='>
+    <rect x='144.00' y='63.36' width='456.12' height='191.16' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI=)'>
+<rect x='194.68' y='70.44' width='50.68' height='177.00' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<rect x='296.04' y='70.44' width='50.68' height='177.00' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<rect x='397.40' y='70.44' width='50.68' height='177.00' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<rect x='498.76' y='70.44' width='50.68' height='177.00' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<line x1='144.00' y1='247.44' x2='600.12' y2='247.44' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='144.00' y1='203.19' x2='600.12' y2='203.19' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='144.00' y1='158.94' x2='600.12' y2='158.94' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='144.00' y1='114.69' x2='600.12' y2='114.69' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='144.00' y1='70.44' x2='600.12' y2='70.44' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+<text x='135.36' y='251.30' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='24.90px' lengthAdjust='spacingAndGlyphs'>-0.05</text>
+<text x='135.36' y='207.05' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.00</text>
+<text x='135.36' y='162.80' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.05</text>
+<text x='135.36' y='118.55' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.10</text>
+<text x='135.36' y='74.30' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.15</text>
+<text transform='translate(90.86,244.48) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='50.22px' lengthAdjust='spacingAndGlyphs'>Adjusted </text>
+<text transform='translate(90.86,194.26) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='7.08px' lengthAdjust='spacingAndGlyphs'>R</text>
+<text transform='translate(85.06,187.17) rotate(-90)' style='font-size: 7.98px;fill: #1B2228; font-family: "Liberation Sans";' textLength='4.56px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text transform='translate(90.86,182.62) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='109.22px' lengthAdjust='spacingAndGlyphs'> for diet (mean ± SD)</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI=)'>
+<line x1='144.00' y1='203.19' x2='600.12' y2='203.19' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+<text x='604.17' y='206.53' style='font-size: 9.36px;fill: #5B6670; font-family: "Liberation Sans";' textLength='37.76px' lengthAdjust='spacingAndGlyphs'>truth = 0</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI=)'>
+<line x1='165.29' y1='209.74' x2='165.29' y2='196.29' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='165.29' cy='203.01' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='173.39' y1='232.48' x2='173.39' y2='171.24' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='173.39' cy='201.86' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+<text x='169.34' y='274.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='169.34' y='290.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI=)'>
+<line x1='215.97' y1='210.62' x2='215.97' y2='196.29' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='215.97' cy='203.46' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='224.07' y1='233.81' x2='224.07' y2='171.51' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='224.07' cy='202.66' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+<text x='220.02' y='274.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='220.02' y='290.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.5</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI=)'>
+<line x1='266.65' y1='211.69' x2='266.65' y2='195.22' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='266.65' cy='203.46' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='274.75' y1='234.08' x2='274.75' y2='171.24' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='274.75' cy='202.66' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+<text x='270.70' y='274.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='270.70' y='290.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI=)'>
+<line x1='317.33' y1='210.00' x2='317.33' y2='196.20' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='317.33' cy='203.10' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='325.43' y1='234.17' x2='325.43' y2='172.39' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='325.43' cy='203.28' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+<text x='321.38' y='274.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.5</text>
+<text x='321.38' y='290.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI=)'>
+<line x1='368.01' y1='180.62' x2='368.01' y2='157.79' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='368.01' cy='169.21' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='376.11' y1='233.46' x2='376.11' y2='173.28' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='376.11' cy='203.37' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+<text x='372.06' y='274.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.5</text>
+<text x='372.06' y='290.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.5</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI=)'>
+<line x1='418.69' y1='162.57' x2='418.69' y2='133.72' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='418.69' cy='148.14' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='426.79' y1='232.93' x2='426.79' y2='173.28' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='426.79' cy='203.10' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+<text x='422.74' y='274.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.5</text>
+<text x='422.74' y='290.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI=)'>
+<line x1='469.37' y1='210.00' x2='469.37' y2='196.20' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='469.37' cy='203.10' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='477.47' y1='233.55' x2='477.47' y2='171.42' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='477.47' cy='202.48' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+<text x='473.42' y='274.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='473.42' y='290.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI=)'>
+<line x1='520.05' y1='159.82' x2='520.05' y2='132.92' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='520.05' cy='146.37' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='528.15' y1='233.01' x2='528.15' y2='173.90' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='528.15' cy='203.46' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+<text x='524.10' y='274.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='524.10' y='290.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.5</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDYwMC4xMnw2My4zNnwyNTQuNTI=)'>
+<line x1='570.73' y1='128.67' x2='570.73' y2='93.80' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='570.73' cy='111.24' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='578.83' y1='232.75' x2='578.83' y2='174.16' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='578.83' cy='203.46' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwzMTUuMDA=)'>
+<text x='574.78' y='274.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='574.78' y='290.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='144.00' y='23.04' style='font-size: 12.00px; font-weight: bold;fill: #1B2228; font-family: "Liberation Sans";' textLength='258.98px' lengthAdjust='spacingAndGlyphs'>No diet effect (true diet–microbiome R² = 0)</text>
+<circle cx='280.43' cy='45.82' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='381.77' cy='45.82' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #1BAF7A;' />
+<text x='287.52' y='49.33' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='85.39px' lengthAdjust='spacingAndGlyphs'>RDA (Dubois et al.)</text>
+<text x='388.85' y='49.33' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='79.26px' lengthAdjust='spacingAndGlyphs'>Individual means</text>
+<text x='139.95' y='274.68' text-anchor='end' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='61.49px' lengthAdjust='spacingAndGlyphs'>cor(diet | ID)</text>
+<text x='139.95' y='290.52' text-anchor='end' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='100.91px' lengthAdjust='spacingAndGlyphs'>cor(microbiome | ID)</text>
+</g>
+</svg>
+
+  <figcaption><b>Figure 1.</b> Generic simulation, not matched to Dubois et al. Mean adjusted R² for diet (±1 SD across replicates) when diet has no effect on the microbiome (true R² = 0). Each group is one combination of the within-individual correlation of diet, cor(diet | ID) = ρ<sub>d</sub>, and of the gut microbiome, cor(microbiome | ID) = ρ<sub>y</sub>. n = 96 samples (24 individuals × 4 samples) for the RDA (blue). Individual means (green): one row per person, n = 24. Each person's microbiome is summarised by the centroid (average position) of their samples in the distance space, and their diet by the average of their diet records; the RDA then relates the 24 centroids to the 24 average diets. 5 diet variables, Euclidean distance, 1,000 replicates per scenario.</figcaption>
+</figure>
+
+<section class="prose">
+<h3>More samples per person, more diet variables</h3>
+<p>At ρ<sub>d</sub> = ρ<sub>y</sub> = 0.8, the naive bias grows with the number of diet variables, from 0.04 with 2 variables to 0.21 with 10. With one sample per person (k = 1) there are no repeated measures and the bias disappears (adjusted R² ≈ 0, 5% false positives). With repeated samples it is 0.07, 0.10 and 0.12 for 2, 4 and 8 samples per person: the extra samples add no new people. Dubois et al. used 16 food categories, so a larger bias would be expected there.</p>
+</section>
+
+<figure>
+  <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' role='img' aria-label='Adjusted R2 by samples per person and number of diet variables' style='width:100%;height:auto;display:block' viewBox='0 0 675.00 288.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw2NzUuMDB8MC4wMHwyODguMDA='>
+    <rect x='0.00' y='0.00' width='675.00' height='288.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwyODguMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpMTU4LjQwfDYwMC4xMnw0Ni4wOHwyMjcuNTI='>
+    <rect x='158.40' y='46.08' width='441.72' height='181.44' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMTU4LjQwfDYwMC4xMnw0Ni4wOHwyMjcuNTI=)'>
+<rect x='221.50' y='52.80' width='63.10' height='168.00' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<rect x='347.71' y='52.80' width='63.10' height='168.00' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<rect x='473.91' y='52.80' width='63.10' height='168.00' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<line x1='158.40' y1='192.80' x2='600.12' y2='192.80' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='158.40' y1='164.80' x2='600.12' y2='164.80' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='158.40' y1='136.80' x2='600.12' y2='136.80' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='158.40' y1='108.80' x2='600.12' y2='108.80' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='158.40' y1='80.80' x2='600.12' y2='80.80' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='158.40' y1='52.80' x2='600.12' y2='52.80' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwyODguMDA=)'>
+<text x='149.76' y='196.66' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.00</text>
+<text x='149.76' y='168.66' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.05</text>
+<text x='149.76' y='140.66' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.10</text>
+<text x='149.76' y='112.66' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.15</text>
+<text x='149.76' y='84.66' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.20</text>
+<text x='149.76' y='56.66' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.25</text>
+<text transform='translate(105.26,201.39) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='50.22px' lengthAdjust='spacingAndGlyphs'>Adjusted </text>
+<text transform='translate(105.26,151.17) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='7.08px' lengthAdjust='spacingAndGlyphs'>R</text>
+<text transform='translate(99.46,144.08) rotate(-90)' style='font-size: 7.98px;fill: #1B2228; font-family: "Liberation Sans";' textLength='4.56px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text transform='translate(105.26,139.53) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='67.31px' lengthAdjust='spacingAndGlyphs'> (mean ± SD)</text>
+</g>
+<g clip-path='url(#cpMTU4LjQwfDYwMC4xMnw0Ni4wOHwyMjcuNTI=)'>
+<line x1='158.40' y1='192.80' x2='600.12' y2='192.80' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwyODguMDA=)'>
+<text x='605.17' y='196.14' style='font-size: 9.36px;fill: #5B6670; font-family: "Liberation Sans";' textLength='37.76px' lengthAdjust='spacingAndGlyphs'>truth = 0</text>
+</g>
+<g clip-path='url(#cpMTU4LjQwfDYwMC4xMnw0Ni4wOHwyMjcuNTI=)'>
+<line x1='184.90' y1='213.02' x2='184.90' y2='173.03' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='184.90' cy='193.02' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='195.00' y1='213.02' x2='195.00' y2='173.03' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='195.00' cy='193.02' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwyODguMDA=)'>
+<text x='189.95' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>1</text>
+<text x='189.95' y='263.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>5</text>
+</g>
+<g clip-path='url(#cpMTU4LjQwfDYwMC4xMnw0Ni4wOHwyMjcuNTI=)'>
+<line x1='248.01' y1='165.08' x2='248.01' y2='137.08' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='248.01' cy='151.08' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='258.10' y1='212.57' x2='258.10' y2='173.14' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='258.10' cy='192.86' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwyODguMDA=)'>
+<text x='253.05' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text x='253.05' y='263.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>5</text>
+</g>
+<g clip-path='url(#cpMTU4LjQwfDYwMC4xMnw0Ni4wOHwyMjcuNTI=)'>
+<line x1='311.11' y1='145.65' x2='311.11' y2='123.58' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='311.11' cy='134.62' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='321.21' y1='211.50' x2='321.21' y2='174.43' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='321.21' cy='192.97' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwyODguMDA=)'>
+<text x='316.16' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>4</text>
+<text x='316.16' y='263.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>5</text>
+</g>
+<g clip-path='url(#cpMTU4LjQwfDYwMC4xMnw0Ni4wOHwyMjcuNTI=)'>
+<line x1='374.21' y1='137.25' x2='374.21' y2='116.42' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='374.21' cy='126.83' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='384.31' y1='212.06' x2='384.31' y2='173.31' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='384.31' cy='192.69' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwyODguMDA=)'>
+<text x='379.26' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>8</text>
+<text x='379.26' y='263.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>5</text>
+</g>
+<g clip-path='url(#cpMTU4LjQwfDYwMC4xMnw0Ni4wOHwyMjcuNTI=)'>
+<line x1='437.31' y1='177.46' x2='437.31' y2='162.22' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='437.31' cy='169.84' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='447.41' y1='204.56' x2='447.41' y2='181.82' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='447.41' cy='193.19' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwyODguMDA=)'>
+<text x='442.36' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>4</text>
+<text x='442.36' y='263.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>2</text>
+</g>
+<g clip-path='url(#cpMTU4LjQwfDYwMC4xMnw0Ni4wOHwyMjcuNTI=)'>
+<line x1='500.42' y1='145.65' x2='500.42' y2='123.58' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='500.42' cy='134.62' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='510.51' y1='211.50' x2='510.51' y2='174.43' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='510.51' cy='192.97' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwyODguMDA=)'>
+<text x='505.47' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>4</text>
+<text x='505.47' y='263.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>5</text>
+</g>
+<g clip-path='url(#cpMTU4LjQwfDYwMC4xMnw0Ni4wOHwyMjcuNTI=)'>
+<line x1='563.52' y1='91.05' x2='563.52' y2='61.03' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='563.52' cy='76.04' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='573.62' y1='220.80' x2='573.62' y2='159.14' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='573.62' cy='191.34' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw2NzUuMDB8MC4wMHwyODguMDA=)'>
+<text x='568.57' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>4</text>
+<text x='568.57' y='263.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='11.65px' lengthAdjust='spacingAndGlyphs'>10</text>
+<circle cx='287.63' cy='28.83' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='388.97' cy='28.83' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #1BAF7A;' />
+<text x='294.72' y='32.34' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='85.39px' lengthAdjust='spacingAndGlyphs'>RDA (Dubois et al.)</text>
+<text x='396.05' y='32.34' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='79.26px' lengthAdjust='spacingAndGlyphs'>Individual means</text>
+<text x='153.35' y='247.68' text-anchor='end' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='108.91px' lengthAdjust='spacingAndGlyphs'>samples per person (k)</text>
+<text x='153.35' y='263.52' text-anchor='end' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='78.95px' lengthAdjust='spacingAndGlyphs'>diet variables (p)</text>
+</g>
+</svg>
+
+  <figcaption><b>Figure 2.</b> Generic simulation, not matched to Dubois et al. Mean adjusted R² (±1 SD) with no diet effect, ρ<sub>d</sub> = ρ<sub>y</sub> = 0.8, varying samples per person (<i>k</i> = 1, 2, 4, 8, with 5 diet variables; k = 1 means no repeated samples) and the number of diet variables (<i>p</i>, with 4 samples per person). Always 24 individuals, so n = 24, 48, 96 and 192 samples for k = 1, 2, 4 and 8 (n = 96 in the p groups) for the RDA (blue). Individual means (green): one row per person, n = 24. Each person's microbiome is summarised by the centroid (average position) of their samples in the distance space, and their diet by the average of their diet records; the RDA then relates the 24 centroids to the 24 average diets. Euclidean distance, 1,000 replicates per scenario.</figcaption>
+</figure>
+
+<section class="prose">
+<h3>The paper's sample sizes and 16 diet variables, with UniFrac</h3>
+<p>Figure 3 uses the paper's sample sizes (128 samples from 24 people: 15 with 4 samples, 5 with 8 and 4 with 7) and its 16 diet variables, without geography. The left panel uses unweighted UniFrac on simulated presence and absence of taxa; the right panel uses square-root unweighted UniFrac, the distance Dubois et al. used. In the right panel the blue points are the paper's analysis: RDA of diet on all samples with free permutation. With no diet effect it gives a mean adjusted R² of 0.00, 0.04 and 0.14 at cor(diet | ID) = cor(microbiome | ID) = 0, 0.5 and 0.8, and p &lt; 0.05 in 4%, 100% and 100% of datasets. With untransformed UniFrac the values are 0.00, 0.07 and 0.23.</p>
+<p>RDA with ID permutation gives correct p-values (4–6%). Because people have different numbers of samples, it swaps only people with the same number of samples. The individual-means analysis uses 4 randomly chosen samples per person, so every person's mean is equally precise. With all samples, means of 4 samples vary more than means of 7–8 in both diet and microbiome, and the adjusted R² picks that up (about 0.05 at cor(diet | ID) = 0). With 4 samples each, individual means give adjusted R² ≈ 0 and 5–7% false positives.</p>
+<p>The square root compresses large distances, so individual identity explains less of the variation for the same cor(microbiome | ID), and the bias is smaller. The bias depends on how much individual identity explains in the distances actually analysed. The study-matched runs below are calibrated to the paper's 45% for individual identity.</p>
+</section>
+
+<figure>
+  <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' role='img' aria-label='UniFrac false positives and adjusted R2' style='width:100%;height:auto;display:block' viewBox='0 0 720.00 306.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA='>
+    <rect x='0.00' y='0.00' width='720.00' height='306.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpMC4wMHwzNjAuMDB8MC4wMHwzMDYuMDA='>
+    <rect x='0.00' y='0.00' width='360.00' height='306.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHwzNjAuMDB8MC4wMHwzMDYuMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpMTQ0LjAwfDI4NS4xMnw3OS4yMHwyNDUuNTI='>
+    <rect x='144.00' y='79.20' width='141.12' height='166.32' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMTQ0LjAwfDI4NS4xMnw3OS4yMHwyNDUuNTI=)'>
+<rect x='191.04' y='85.36' width='47.04' height='154.00' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<line x1='144.00' y1='239.36' x2='285.12' y2='239.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='144.00' y1='217.36' x2='285.12' y2='217.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='144.00' y1='195.36' x2='285.12' y2='195.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='144.00' y1='173.36' x2='285.12' y2='173.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='144.00' y1='151.36' x2='285.12' y2='151.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='144.00' y1='129.36' x2='285.12' y2='129.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='144.00' y1='107.36' x2='285.12' y2='107.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='144.00' y1='85.36' x2='285.12' y2='85.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA=)'>
+<text x='135.36' y='243.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='24.90px' lengthAdjust='spacingAndGlyphs'>-0.10</text>
+<text x='135.36' y='221.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='24.90px' lengthAdjust='spacingAndGlyphs'>-0.05</text>
+<text x='135.36' y='199.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.00</text>
+<text x='135.36' y='177.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.05</text>
+<text x='135.36' y='155.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.10</text>
+<text x='135.36' y='133.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.15</text>
+<text x='135.36' y='111.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.20</text>
+<text x='135.36' y='89.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.25</text>
+<text transform='translate(90.86,247.90) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='50.22px' lengthAdjust='spacingAndGlyphs'>Adjusted </text>
+<text transform='translate(90.86,197.68) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='7.08px' lengthAdjust='spacingAndGlyphs'>R</text>
+<text transform='translate(85.06,190.59) rotate(-90)' style='font-size: 7.98px;fill: #1B2228; font-family: "Liberation Sans";' textLength='4.56px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text transform='translate(90.86,186.04) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='109.22px' lengthAdjust='spacingAndGlyphs'> for diet (mean ± SD)</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDI4NS4xMnw3OS4yMHwyNDUuNTI=)'>
+<line x1='144.00' y1='195.36' x2='285.12' y2='195.36' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA=)'>
+<text x='288.88' y='198.70' style='font-size: 9.36px;fill: #5B6670; font-family: "Liberation Sans";' textLength='37.76px' lengthAdjust='spacingAndGlyphs'>truth = 0</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDI4NS4xMnw3OS4yMHwyNDUuNTI=)'>
+<line x1='163.76' y1='199.01' x2='163.76' y2='192.15' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='163.76' cy='195.58' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='171.28' y1='230.56' x2='171.28' y2='161.66' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='171.28' cy='196.11' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA=)'>
+<text x='167.52' y='265.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='167.52' y='281.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDI4NS4xMnw3OS4yMHwyNDUuNTI=)'>
+<line x1='210.80' y1='170.28' x2='210.80' y2='158.75' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='210.80' cy='164.52' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='218.32' y1='229.33' x2='218.32' y2='157.70' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='218.32' cy='193.51' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA=)'>
+<text x='214.56' y='265.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.5</text>
+<text x='214.56' y='281.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.5</text>
+</g>
+<g clip-path='url(#cpMTQ0LjAwfDI4NS4xMnw3OS4yMHwyNDUuNTI=)'>
+<line x1='257.84' y1='103.75' x2='257.84' y2='85.45' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='257.84' cy='94.60' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='265.36' y1='228.23' x2='265.36' y2='155.01' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='265.36' cy='191.62' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA=)'>
+<text x='261.60' y='265.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='261.60' y='281.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='144.00' y='23.04' style='font-size: 12.00px; font-weight: bold;fill: #1B2228; font-family: "Liberation Sans";' textLength='122.54px' lengthAdjust='spacingAndGlyphs'>Unweighted UniFrac</text>
+<circle cx='170.54' cy='50.59' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='170.54' cy='62.40' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #1BAF7A;' />
+<text x='177.62' y='54.10' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='85.39px' lengthAdjust='spacingAndGlyphs'>RDA (Dubois et al.)</text>
+<text x='177.62' y='65.91' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='79.26px' lengthAdjust='spacingAndGlyphs'>Individual means</text>
+<text x='140.24' y='265.68' text-anchor='end' style='font-size: 9.60px;fill: #1B2228; font-family: "Liberation Sans";' textLength='57.91px' lengthAdjust='spacingAndGlyphs'>cor(diet | ID)</text>
+<text x='140.24' y='281.52' text-anchor='end' style='font-size: 9.60px;fill: #5B6670; font-family: "Liberation Sans";' textLength='95.04px' lengthAdjust='spacingAndGlyphs'>cor(microbiome | ID)</text>
+</g>
+<defs>
+  <clipPath id='cpNTA0LjAwfDY0NS4xMnw3OS4yMHwyNDUuNTI='>
+    <rect x='504.00' y='79.20' width='141.12' height='166.32' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpNTA0LjAwfDY0NS4xMnw3OS4yMHwyNDUuNTI=)'>
+</g>
+<defs>
+  <clipPath id='cpMzYwLjAwfDcyMC4wMHwwLjAwfDMwNi4wMA=='>
+    <rect x='360.00' y='0.00' width='360.00' height='306.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMzYwLjAwfDcyMC4wMHwwLjAwfDMwNi4wMA==)'>
+</g>
+<g clip-path='url(#cpNTA0LjAwfDY0NS4xMnw3OS4yMHwyNDUuNTI=)'>
+<rect x='551.04' y='85.36' width='47.04' height='154.00' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<line x1='504.00' y1='239.36' x2='645.12' y2='239.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='504.00' y1='217.36' x2='645.12' y2='217.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='504.00' y1='195.36' x2='645.12' y2='195.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='504.00' y1='173.36' x2='645.12' y2='173.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='504.00' y1='151.36' x2='645.12' y2='151.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='504.00' y1='129.36' x2='645.12' y2='129.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='504.00' y1='107.36' x2='645.12' y2='107.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='504.00' y1='85.36' x2='645.12' y2='85.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA=)'>
+<text x='495.36' y='243.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='24.90px' lengthAdjust='spacingAndGlyphs'>-0.10</text>
+<text x='495.36' y='221.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='24.90px' lengthAdjust='spacingAndGlyphs'>-0.05</text>
+<text x='495.36' y='199.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.00</text>
+<text x='495.36' y='177.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.05</text>
+<text x='495.36' y='155.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.10</text>
+<text x='495.36' y='133.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.15</text>
+<text x='495.36' y='111.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.20</text>
+<text x='495.36' y='89.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.43px' lengthAdjust='spacingAndGlyphs'>0.25</text>
+<text transform='translate(450.86,247.90) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='50.22px' lengthAdjust='spacingAndGlyphs'>Adjusted </text>
+<text transform='translate(450.86,197.68) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='7.08px' lengthAdjust='spacingAndGlyphs'>R</text>
+<text transform='translate(445.06,190.59) rotate(-90)' style='font-size: 7.98px;fill: #1B2228; font-family: "Liberation Sans";' textLength='4.56px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text transform='translate(450.86,186.04) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='109.22px' lengthAdjust='spacingAndGlyphs'> for diet (mean ± SD)</text>
+</g>
+<g clip-path='url(#cpNTA0LjAwfDY0NS4xMnw3OS4yMHwyNDUuNTI=)'>
+<line x1='504.00' y1='195.36' x2='645.12' y2='195.36' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA=)'>
+<text x='648.88' y='198.70' style='font-size: 9.36px;fill: #5B6670; font-family: "Liberation Sans";' textLength='37.76px' lengthAdjust='spacingAndGlyphs'>truth = 0</text>
+</g>
+<g clip-path='url(#cpNTA0LjAwfDY0NS4xMnw3OS4yMHwyNDUuNTI=)'>
+<line x1='523.76' y1='197.30' x2='523.76' y2='193.60' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='523.76' cy='195.45' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='531.28' y1='212.96' x2='531.28' y2='176.35' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='531.28' cy='194.66' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA=)'>
+<text x='527.52' y='265.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='527.52' y='281.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+</g>
+<g clip-path='url(#cpNTA0LjAwfDY0NS4xMnw3OS4yMHwyNDUuNTI=)'>
+<line x1='570.80' y1='181.63' x2='570.80' y2='176.00' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='570.80' cy='178.82' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='578.32' y1='217.93' x2='578.32' y2='171.64' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='578.32' cy='194.79' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA=)'>
+<text x='574.56' y='265.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.5</text>
+<text x='574.56' y='281.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.5</text>
+</g>
+<g clip-path='url(#cpNTA0LjAwfDY0NS4xMnw3OS4yMHwyNDUuNTI=)'>
+<line x1='617.84' y1='141.24' x2='617.84' y2='129.71' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='617.84' cy='135.48' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='625.36' y1='220.22' x2='625.36' y2='169.97' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='625.36' cy='195.10' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwzMDYuMDA=)'>
+<text x='621.60' y='265.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='621.60' y='281.52' text-anchor='middle' style='font-size: 10.20px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='504.00' y='23.04' style='font-size: 12.00px; font-weight: bold;fill: #1B2228; font-family: "Liberation Sans";' textLength='205.98px' lengthAdjust='spacingAndGlyphs'>Square-root UniFrac (Dubois et al.)</text>
+<circle cx='530.54' cy='50.59' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='530.54' cy='62.40' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #1BAF7A;' />
+<text x='537.62' y='54.10' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='85.39px' lengthAdjust='spacingAndGlyphs'>RDA (Dubois et al.)</text>
+<text x='537.62' y='65.91' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='79.26px' lengthAdjust='spacingAndGlyphs'>Individual means</text>
+<text x='500.24' y='265.68' text-anchor='end' style='font-size: 9.60px;fill: #1B2228; font-family: "Liberation Sans";' textLength='57.91px' lengthAdjust='spacingAndGlyphs'>cor(diet | ID)</text>
+<text x='500.24' y='281.52' text-anchor='end' style='font-size: 9.60px;fill: #5B6670; font-family: "Liberation Sans";' textLength='95.04px' lengthAdjust='spacingAndGlyphs'>cor(microbiome | ID)</text>
+</g>
+</svg>
+
+  <figcaption><b>Figure 3.</b> Simulation with the paper's sample sizes and number of diet variables, but no geography. Mean adjusted R² for diet (±1 SD) with no diet effect (true R² = 0). Left: unweighted UniFrac. Right: square-root unweighted UniFrac, the distance used by Dubois et al. n = 128 samples from 24 individuals (15 with 4 samples, 5 with 8, 4 with 7) for the RDA. 16 diet variables, 500 replicates per scenario. ID permutation swaps only people with the same number of samples. Individual means (green): one row per person, n = 24. Each person's microbiome is summarised by the centroid (average position) of 4 randomly chosen samples in the distance space, and their diet by the average of the same 4 diet records; the RDA then relates the 24 centroids to the 24 average diets. Using 4 samples for everyone makes all averages equally precise.</figcaption>
+</figure>
+
+
+<section class="prose">
+<h2>Simulation matched to Dubois et al.</h2>
+<p>The second set copies the study and its analysis as closely as the paper allows:</p>
+<ul>
+  <li>15 Nunavut participants with 4 samples each and 9 Montréal participants with 7–8 samples each: 128 samples.</li>
+  <li>16 diet variables, centred and scaled.</li>
+  <li>Response: square-root-transformed unweighted UniFrac, analysed by RDA with adjusted R² and free permutation, as in the paper.</li>
+  <li>Three analyses: diet on all samples (paper: 0.11), diet given geography (paper: 0.064), and diet in Nunavut participants only (paper: 0.169).</li>
+  <li>The microbiome is set so that individual identity explains 44% and geography 4% of UniFrac variation, matching the paper's 45% and 4%. That needs cor(microbiome | ID) = 0.8 on the latent scale, because sampling taxa adds noise to UniFrac.</li>
+  <li>Geography shifts both diet and the microbiome, but diet itself has no effect. Diet's within-person correlation cor(diet | ID) is not reported, so it is varied from 0 to 0.8.</li>
+</ul>
+<p>RDA with ID permutation swaps whole individuals that have the same number of samples, which here means within a region (Nunavut 4 samples; Montréal 7 or 8). It is therefore shown for diet given geography and for Nunavut only, where that is the right comparison. The individual-means analysis is not possible for Nunavut only, because 15 people cannot support 16 predictors.</p>
+<p>Diet on all samples is not a clean no-effect test. Diet differs between regions and so does the microbiome, so diet is genuinely associated with the microbiome through geography, and any analysis of diet alone should detect something. The clean tests are <b>diet given geography</b> and <b>Nunavut only</b>, where the true adjusted R² is 0.</p>
+<p>In both clean tests the naive RDA is only right when diet has no within-person stability. From cor(diet | ID) = 0.3 upward it gives p &lt; 0.05 in 100% of datasets. Its mean adjusted R² for diet given geography is 0.05, 0.10 and 0.13 at cor(diet | ID) = 0.3, 0.6 and 0.8, bracketing the paper's 0.064. For Nunavut only it is 0.07, 0.13 and 0.18, bracketing the paper's 0.169. RDA with ID permutation brings the false-positive rate back to 4–6%, and individual means give adjusted R² ≈ 0.</p>
+<p>For diet on all samples, the naive adjusted R² is 0.07–0.15 for cor(diet | ID) = 0.3–0.8, around the paper's 0.11, which mixes the geography-driven association with the same repeated-sample bias.</p>
+<p>With a true diet effect (R² = 0.05 on the latent scale, cor(diet | ID) = 0.6), the naive estimates rise only a little above the null values (0.12 for diet, 0.10 for diet given geography, 0.14 for Nunavut only). So in this design, the size of the naive adjusted R² says little about whether diet has any effect.</p>
+<figure id="calib-fig">
+  <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' role='img' aria-label='Study-matched adjusted R2 for diet and diet given geography' style='width:100%;height:auto;display:block' viewBox='0 0 855.00 342.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA='>
+    <rect x='0.00' y='0.00' width='855.00' height='342.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpMC4wMHwyODUuMDB8MC4wMHwzNDIuMDA='>
+    <rect x='0.00' y='0.00' width='285.00' height='342.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHwyODUuMDB8MC4wMHwzNDIuMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpNzEuMjh8MjM1LjU4fDUyLjI3fDMwMi4wOA=='>
+    <rect x='71.28' y='52.27' width='164.30' height='249.81' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpNzEuMjh8MjM1LjU4fDUyLjI3fDMwMi4wOA==)'>
+<rect x='112.35' y='61.52' width='41.07' height='231.31' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<rect x='194.50' y='61.52' width='41.07' height='231.31' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<line x1='71.28' y1='280.33' x2='235.58' y2='280.33' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='71.28' y1='249.07' x2='235.58' y2='249.07' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='71.28' y1='217.81' x2='235.58' y2='217.81' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='71.28' y1='186.55' x2='235.58' y2='186.55' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='71.28' y1='155.30' x2='235.58' y2='155.30' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='71.28' y1='124.04' x2='235.58' y2='124.04' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='71.28' y1='92.78' x2='235.58' y2='92.78' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='71.28' y1='61.52' x2='235.58' y2='61.52' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='65.58' y='282.87' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='16.43px' lengthAdjust='spacingAndGlyphs'>-0.10</text>
+<text x='65.58' y='251.62' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='16.43px' lengthAdjust='spacingAndGlyphs'>-0.05</text>
+<text x='65.58' y='220.36' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.00</text>
+<text x='65.58' y='189.10' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.05</text>
+<text x='65.58' y='157.84' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.10</text>
+<text x='65.58' y='126.58' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.15</text>
+<text x='65.58' y='95.33' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.20</text>
+<text x='65.58' y='64.07' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.25</text>
+<text transform='translate(35.28,248.62) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='50.22px' lengthAdjust='spacingAndGlyphs'>Adjusted </text>
+<text transform='translate(35.28,198.40) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='7.08px' lengthAdjust='spacingAndGlyphs'>R</text>
+<text transform='translate(29.48,191.32) rotate(-90)' style='font-size: 7.98px;fill: #1B2228; font-family: "Liberation Sans";' textLength='4.56px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text transform='translate(35.28,186.76) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='81.03px' lengthAdjust='spacingAndGlyphs'> (mean, 5–95%)</text>
+</g>
+<g clip-path='url(#cpNzEuMjh8MjM1LjU4fDUyLjI3fDMwMi4wOA==)'>
+<line x1='71.28' y1='217.81' x2='235.58' y2='217.81' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+<line x1='71.28' y1='149.05' x2='235.58' y2='149.05' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='238.87' y='147.55' style='font-size: 6.18px;fill: #5B6670; font-family: "Liberation Sans";' textLength='20.40px' lengthAdjust='spacingAndGlyphs'>Dubois</text>
+<text x='238.87' y='154.96' style='font-size: 6.18px;fill: #5B6670; font-family: "Liberation Sans";' textLength='12.24px' lengthAdjust='spacingAndGlyphs'>0.11</text>
+</g>
+<g clip-path='url(#cpNzEuMjh8MjM1LjU4fDUyLjI3fDMwMi4wOA==)'>
+<line x1='88.53' y1='209.87' x2='88.53' y2='194.68' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='88.53' cy='202.56' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='95.10' y1='249.76' x2='95.10' y2='122.04' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='95.10' cy='183.37' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='91.82' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+</g>
+<g clip-path='url(#cpNzEuMjh8MjM1LjU4fDUyLjI3fDMwMi4wOA==)'>
+<line x1='129.61' y1='182.05' x2='129.61' y2='162.30' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='129.61' cy='172.36' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='136.18' y1='251.01' x2='136.18' y2='133.54' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='136.18' cy='193.37' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='132.89' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.3</text>
+</g>
+<g clip-path='url(#cpNzEuMjh8MjM1LjU4fDUyLjI3fDMwMi4wOA==)'>
+<line x1='170.68' y1='153.92' x2='170.68' y2='130.85' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='170.68' cy='142.92' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='177.25' y1='253.01' x2='177.25' y2='136.11' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='177.25' cy='192.87' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='173.97' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.6</text>
+</g>
+<g clip-path='url(#cpNzEuMjh8MjM1LjU4fDUyLjI3fDMwMi4wOA==)'>
+<line x1='211.76' y1='136.17' x2='211.76' y2='109.47' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='211.76' cy='122.85' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='218.33' y1='255.38' x2='218.33' y2='141.29' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='218.33' cy='195.93' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='215.04' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='71.28' y='15.21' style='font-size: 12.00px; font-weight: bold;fill: #1B2228; font-family: "Liberation Sans";' textLength='103.08px' lengthAdjust='spacingAndGlyphs'>Diet (all samples)</text>
+<circle cx='124.40' cy='29.19' r='2.49' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='124.40' cy='36.98' r='2.49' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #1BAF7A;' />
+<text x='129.07' y='31.51' style='font-size: 6.49px;fill: #1B2228; font-family: "Liberation Sans";' textLength='56.31px' lengthAdjust='spacingAndGlyphs'>RDA (Dubois et al.)</text>
+<text x='129.07' y='39.30' style='font-size: 6.49px;fill: #1B2228; font-family: "Liberation Sans";' textLength='52.29px' lengthAdjust='spacingAndGlyphs'>Individual means</text>
+<text x='67.99' y='315.39' text-anchor='end' style='font-size: 9.60px;fill: #1B2228; font-family: "Liberation Sans";' textLength='57.91px' lengthAdjust='spacingAndGlyphs'>cor(diet | ID)</text>
+</g>
+<defs>
+  <clipPath id='cpMzU2LjI4fDUyMC41OHw1Mi4yN3wzMDIuMDg='>
+    <rect x='356.28' y='52.27' width='164.30' height='249.81' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMzU2LjI4fDUyMC41OHw1Mi4yN3wzMDIuMDg=)'>
+</g>
+<defs>
+  <clipPath id='cpMjg1LjAwfDU3MC4wMHwwLjAwfDM0Mi4wMA=='>
+    <rect x='285.00' y='0.00' width='285.00' height='342.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMjg1LjAwfDU3MC4wMHwwLjAwfDM0Mi4wMA==)'>
+</g>
+<g clip-path='url(#cpMzU2LjI4fDUyMC41OHw1Mi4yN3wzMDIuMDg=)'>
+<rect x='397.35' y='61.52' width='41.07' height='231.31' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<rect x='479.50' y='61.52' width='41.07' height='231.31' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<line x1='356.28' y1='280.33' x2='520.58' y2='280.33' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='356.28' y1='249.07' x2='520.58' y2='249.07' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='356.28' y1='217.81' x2='520.58' y2='217.81' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='356.28' y1='186.55' x2='520.58' y2='186.55' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='356.28' y1='155.30' x2='520.58' y2='155.30' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='356.28' y1='124.04' x2='520.58' y2='124.04' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='356.28' y1='92.78' x2='520.58' y2='92.78' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='356.28' y1='61.52' x2='520.58' y2='61.52' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='350.58' y='282.87' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='16.43px' lengthAdjust='spacingAndGlyphs'>-0.10</text>
+<text x='350.58' y='251.62' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='16.43px' lengthAdjust='spacingAndGlyphs'>-0.05</text>
+<text x='350.58' y='220.36' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.00</text>
+<text x='350.58' y='189.10' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.05</text>
+<text x='350.58' y='157.84' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.10</text>
+<text x='350.58' y='126.58' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.15</text>
+<text x='350.58' y='95.33' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.20</text>
+<text x='350.58' y='64.07' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.25</text>
+<text transform='translate(320.28,248.62) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='50.22px' lengthAdjust='spacingAndGlyphs'>Adjusted </text>
+<text transform='translate(320.28,198.40) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='7.08px' lengthAdjust='spacingAndGlyphs'>R</text>
+<text transform='translate(314.48,191.32) rotate(-90)' style='font-size: 7.98px;fill: #1B2228; font-family: "Liberation Sans";' textLength='4.56px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text transform='translate(320.28,186.76) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='81.03px' lengthAdjust='spacingAndGlyphs'> (mean, 5–95%)</text>
+</g>
+<g clip-path='url(#cpMzU2LjI4fDUyMC41OHw1Mi4yN3wzMDIuMDg=)'>
+<line x1='356.28' y1='217.81' x2='520.58' y2='217.81' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+<line x1='356.28' y1='177.80' x2='520.58' y2='177.80' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='523.87' y='176.30' style='font-size: 6.18px;fill: #5B6670; font-family: "Liberation Sans";' textLength='20.40px' lengthAdjust='spacingAndGlyphs'>Dubois</text>
+<text x='523.87' y='183.72' style='font-size: 6.18px;fill: #5B6670; font-family: "Liberation Sans";' textLength='15.77px' lengthAdjust='spacingAndGlyphs'>0.064</text>
+</g>
+<g clip-path='url(#cpMzU2LjI4fDUyMC41OHw1Mi4yN3wzMDIuMDg=)'>
+<line x1='373.53' y1='222.81' x2='373.53' y2='213.00' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='373.53' cy='217.94' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='380.10' y1='280.95' x2='380.10' y2='142.79' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='380.10' cy='205.56' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='376.82' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+</g>
+<g clip-path='url(#cpMzU2LjI4fDUyMC41OHw1Mi4yN3wzMDIuMDg=)'>
+<line x1='414.61' y1='195.74' x2='414.61' y2='178.93' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='414.61' cy='187.43' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='421.18' y1='278.95' x2='421.18' y2='152.86' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='421.18' cy='214.50' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='417.89' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.3</text>
+</g>
+<g clip-path='url(#cpMzU2LjI4fDUyMC41OHw1Mi4yN3wzMDIuMDg=)'>
+<line x1='455.68' y1='168.18' x2='455.68' y2='147.11' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='455.68' cy='157.42' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='462.25' y1='278.70' x2='462.25' y2='148.80' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='462.25' cy='212.87' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='458.97' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.6</text>
+</g>
+<g clip-path='url(#cpMzU2LjI4fDUyMC41OHw1Mi4yN3wzMDIuMDg=)'>
+<line x1='496.76' y1='147.30' x2='496.76' y2='124.23' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='496.76' cy='136.23' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<line x1='503.33' y1='280.77' x2='503.33' y2='159.30' style='stroke-width: 1.50; stroke: #1BAF7A;' />
+<circle cx='503.33' cy='215.12' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='500.04' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='356.28' y='15.21' style='font-size: 12.00px; font-weight: bold;fill: #1B2228; font-family: "Liberation Sans";' textLength='128.84px' lengthAdjust='spacingAndGlyphs'>Diet given geography</text>
+<circle cx='409.40' cy='29.19' r='2.49' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='409.40' cy='36.98' r='2.49' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #1BAF7A;' />
+<text x='414.07' y='31.51' style='font-size: 6.49px;fill: #1B2228; font-family: "Liberation Sans";' textLength='56.31px' lengthAdjust='spacingAndGlyphs'>RDA (Dubois et al.)</text>
+<text x='414.07' y='39.30' style='font-size: 6.49px;fill: #1B2228; font-family: "Liberation Sans";' textLength='52.29px' lengthAdjust='spacingAndGlyphs'>Individual means</text>
+<text x='352.99' y='315.39' text-anchor='end' style='font-size: 9.60px;fill: #1B2228; font-family: "Liberation Sans";' textLength='57.91px' lengthAdjust='spacingAndGlyphs'>cor(diet | ID)</text>
+</g>
+<defs>
+  <clipPath id='cpNjQxLjI4fDgwNS41OHw0MS44MnwzMDIuMDg='>
+    <rect x='641.28' y='41.82' width='164.30' height='260.27' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpNjQxLjI4fDgwNS41OHw0MS44MnwzMDIuMDg=)'>
+</g>
+<defs>
+  <clipPath id='cpNTcwLjAwfDg1NS4wMHwwLjAwfDM0Mi4wMA=='>
+    <rect x='570.00' y='0.00' width='285.00' height='342.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpNTcwLjAwfDg1NS4wMHwwLjAwfDM0Mi4wMA==)'>
+</g>
+<g clip-path='url(#cpNjQxLjI4fDgwNS41OHw0MS44MnwzMDIuMDg=)'>
+<rect x='682.35' y='51.46' width='41.07' height='240.99' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<rect x='764.50' y='51.46' width='41.07' height='240.99' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<line x1='641.28' y1='279.42' x2='805.58' y2='279.42' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='641.28' y1='246.85' x2='805.58' y2='246.85' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='641.28' y1='214.29' x2='805.58' y2='214.29' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='641.28' y1='181.72' x2='805.58' y2='181.72' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='641.28' y1='149.15' x2='805.58' y2='149.15' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='641.28' y1='116.59' x2='805.58' y2='116.59' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='641.28' y1='84.02' x2='805.58' y2='84.02' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='641.28' y1='51.46' x2='805.58' y2='51.46' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='635.58' y='281.96' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='16.43px' lengthAdjust='spacingAndGlyphs'>-0.10</text>
+<text x='635.58' y='249.40' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='16.43px' lengthAdjust='spacingAndGlyphs'>-0.05</text>
+<text x='635.58' y='216.83' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.00</text>
+<text x='635.58' y='184.27' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.05</text>
+<text x='635.58' y='151.70' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.10</text>
+<text x='635.58' y='119.13' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.15</text>
+<text x='635.58' y='86.57' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.20</text>
+<text x='635.58' y='54.00' text-anchor='end' style='font-size: 7.13px;fill: #5B6670; font-family: "Liberation Sans";' textLength='14.13px' lengthAdjust='spacingAndGlyphs'>0.25</text>
+<text transform='translate(605.28,243.40) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='50.22px' lengthAdjust='spacingAndGlyphs'>Adjusted </text>
+<text transform='translate(605.28,193.18) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='7.08px' lengthAdjust='spacingAndGlyphs'>R</text>
+<text transform='translate(599.48,186.09) rotate(-90)' style='font-size: 7.98px;fill: #1B2228; font-family: "Liberation Sans";' textLength='4.56px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text transform='translate(605.28,181.53) rotate(-90)' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='81.03px' lengthAdjust='spacingAndGlyphs'> (mean, 5–95%)</text>
+</g>
+<g clip-path='url(#cpNjQxLjI4fDgwNS41OHw0MS44MnwzMDIuMDg=)'>
+<line x1='641.28' y1='214.29' x2='805.58' y2='214.29' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+<line x1='641.28' y1='104.21' x2='805.58' y2='104.21' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='808.87' y='102.71' style='font-size: 6.18px;fill: #5B6670; font-family: "Liberation Sans";' textLength='20.40px' lengthAdjust='spacingAndGlyphs'>Dubois</text>
+<text x='808.87' y='110.13' style='font-size: 6.18px;fill: #5B6670; font-family: "Liberation Sans";' textLength='15.77px' lengthAdjust='spacingAndGlyphs'>0.169</text>
+</g>
+<g clip-path='url(#cpNjQxLjI4fDgwNS41OHw0MS44MnwzMDIuMDg=)'>
+<line x1='661.82' y1='229.46' x2='661.82' y2='200.35' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='661.82' cy='215.13' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='661.82' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+</g>
+<g clip-path='url(#cpNjQxLjI4fDgwNS41OHw0MS44MnwzMDIuMDg=)'>
+<line x1='702.89' y1='186.41' x2='702.89' y2='152.74' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='702.89' cy='170.00' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='702.89' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.3</text>
+</g>
+<g clip-path='url(#cpNjQxLjI4fDgwNS41OHw0MS44MnwzMDIuMDg=)'>
+<line x1='743.97' y1='146.03' x2='743.97' y2='108.12' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='743.97' cy='127.07' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='743.97' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.6</text>
+</g>
+<g clip-path='url(#cpNjQxLjI4fDgwNS41OHw0MS44MnwzMDIuMDg=)'>
+<line x1='785.04' y1='116.52' x2='785.04' y2='73.60' style='stroke-width: 1.50; stroke: #2A78D6;' />
+<circle cx='785.04' cy='95.81' r='2.67' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+</g>
+<g clip-path='url(#cpMC4wMHw4NTUuMDB8MC4wMHwzNDIuMDA=)'>
+<text x='785.04' y='315.39' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='641.28' y='15.21' style='font-size: 12.00px; font-weight: bold;fill: #1B2228; font-family: "Liberation Sans";' textLength='112.98px' lengthAdjust='spacingAndGlyphs'>Diet, Nunavut only</text>
+<circle cx='694.40' cy='26.22' r='2.49' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #2A78D6;' />
+<text x='699.07' y='28.53' style='font-size: 6.49px;fill: #1B2228; font-family: "Liberation Sans";' textLength='56.31px' lengthAdjust='spacingAndGlyphs'>RDA (Dubois et al.)</text>
+<text x='637.99' y='315.39' text-anchor='end' style='font-size: 9.60px;fill: #1B2228; font-family: "Liberation Sans";' textLength='57.91px' lengthAdjust='spacingAndGlyphs'>cor(diet | ID)</text>
+</g>
+</svg>
+
+  <figcaption><b>Figure 4.</b> Mean adjusted R² with 5th–95th percentiles in the study-matched simulation with no diet effect (square-root unweighted UniFrac, 500 replicates; n = 128 samples from 24 individuals, and n = 60 samples from 15 individuals for Nunavut only), by diet's within-person correlation cor(diet | ID). Left: diet on all samples, the analysis behind the paper's 0.11 (their Figure 3b); it also picks up the regional difference. Middle: diet given geography (paper 0.064). Right: diet in Nunavut participants only (paper 0.169). In the middle and right panels the truth is 0. Blue points are the paper's analysis. Dashed lines: values reported by Dubois et al. (0.11, 0.064 and 0.169). Individual means (green): one row per person, n = 24. Each person's microbiome is summarised by the centroid (average position) of their samples in the distance space, and their diet by the average of their diet records; the RDA then relates the 24 centroids to the 24 average diets (given geography in the middle panel). It uses all of each person's samples and is not possible for Nunavut only, where 15 people cannot support 16 diet variables.</figcaption>
+</figure>
+
+<figure>
+  <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' role='img' aria-label='Study-matched false-positive rates for diet given geography' style='width:100%;height:auto;display:block' viewBox='0 0 720.00 288.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA='>
+    <rect x='0.00' y='0.00' width='720.00' height='288.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpMC4wMHwzNjAuMDB8MC4wMHwyODguMDA='>
+    <rect x='0.00' y='0.00' width='360.00' height='288.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHwzNjAuMDB8MC4wMHwyODguMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpMTA4LjAwfDI4NS4xMnw5NS4wNHwyMjcuNTI='>
+    <rect x='108.00' y='95.04' width='177.12' height='132.48' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMTA4LjAwfDI4NS4xMnw5NS4wNHwyMjcuNTI=)'>
+<rect x='152.28' y='99.95' width='44.28' height='122.67' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<rect x='240.84' y='99.95' width='44.28' height='122.67' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<line x1='108.00' y1='222.61' x2='285.12' y2='222.61' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='108.00' y1='191.95' x2='285.12' y2='191.95' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='108.00' y1='161.28' x2='285.12' y2='161.28' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='108.00' y1='130.61' x2='285.12' y2='130.61' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='108.00' y1='99.95' x2='285.12' y2='99.95' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='99.36' y='226.47' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='15.15px' lengthAdjust='spacingAndGlyphs'>0%</text>
+<text x='99.36' y='195.80' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.33px' lengthAdjust='spacingAndGlyphs'>25%</text>
+<text x='99.36' y='165.14' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.33px' lengthAdjust='spacingAndGlyphs'>50%</text>
+<text x='99.36' y='134.47' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.33px' lengthAdjust='spacingAndGlyphs'>75%</text>
+<text x='99.36' y='103.80' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='27.50px' lengthAdjust='spacingAndGlyphs'>100%</text>
+<text transform='translate(57.60,161.28) rotate(-90)' text-anchor='middle' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='117.66px' lengthAdjust='spacingAndGlyphs'>Datasets with p &lt; 0.05</text>
+</g>
+<g clip-path='url(#cpMTA4LjAwfDI4NS4xMnw5NS4wNHwyMjcuNTI=)'>
+<line x1='108.00' y1='216.48' x2='285.12' y2='216.48' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='288.66' y='219.82' style='font-size: 9.36px;fill: #5B6670; font-family: "Liberation Sans";' textLength='13.13px' lengthAdjust='spacingAndGlyphs'>5%</text>
+</g>
+<g clip-path='url(#cpMTA4LjAwfDI4NS4xMnw5NS4wNHwyMjcuNTI=)'>
+<circle cx='123.06' cy='215.25' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='130.14' cy='215.74' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #EB6834;' />
+<circle cx='137.22' cy='215.99' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='130.14' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+</g>
+<g clip-path='url(#cpMTA4LjAwfDI4NS4xMnw5NS4wNHwyMjcuNTI=)'>
+<circle cx='167.34' cy='99.95' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='174.42' cy='217.46' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #EB6834;' />
+<circle cx='181.50' cy='215.74' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='174.42' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.3</text>
+</g>
+<g clip-path='url(#cpMTA4LjAwfDI4NS4xMnw5NS4wNHwyMjcuNTI=)'>
+<circle cx='211.62' cy='99.95' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='218.70' cy='216.97' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #EB6834;' />
+<circle cx='225.78' cy='215.25' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='218.70' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.6</text>
+</g>
+<g clip-path='url(#cpMTA4LjAwfDI4NS4xMnw5NS4wNHwyMjcuNTI=)'>
+<circle cx='255.90' cy='99.95' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='262.98' cy='215.50' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #EB6834;' />
+<circle cx='270.06' cy='216.48' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #1BAF7A;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='262.98' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='108.00' y='23.04' style='font-size: 12.00px; font-weight: bold;fill: #1B2228; font-family: "Liberation Sans";' textLength='191.69px' lengthAdjust='spacingAndGlyphs'>Diet given geography (truth = 0)</text>
+<circle cx='145.65' cy='55.64' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='145.65' cy='67.45' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #EB6834;' />
+<circle cx='145.65' cy='79.26' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #1BAF7A;' />
+<text x='152.73' y='59.15' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='85.39px' lengthAdjust='spacingAndGlyphs'>RDA (Dubois et al.)</text>
+<text x='152.73' y='70.96' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='99.17px' lengthAdjust='spacingAndGlyphs'>RDA (ID permutation)</text>
+<text x='152.73' y='82.77' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='79.26px' lengthAdjust='spacingAndGlyphs'>Individual means</text>
+<text x='104.46' y='247.68' text-anchor='end' style='font-size: 9.60px;fill: #1B2228; font-family: "Liberation Sans";' textLength='57.91px' lengthAdjust='spacingAndGlyphs'>cor(diet | ID)</text>
+</g>
+<defs>
+  <clipPath id='cpNDY4LjAwfDY0NS4xMnw3OS4yMHwyMjcuNTI='>
+    <rect x='468.00' y='79.20' width='177.12' height='148.32' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpNDY4LjAwfDY0NS4xMnw3OS4yMHwyMjcuNTI=)'>
+</g>
+<defs>
+  <clipPath id='cpMzYwLjAwfDcyMC4wMHwwLjAwfDI4OC4wMA=='>
+    <rect x='360.00' y='0.00' width='360.00' height='288.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMzYwLjAwfDcyMC4wMHwwLjAwfDI4OC4wMA==)'>
+</g>
+<g clip-path='url(#cpNDY4LjAwfDY0NS4xMnw3OS4yMHwyMjcuNTI=)'>
+<rect x='512.28' y='84.69' width='44.28' height='137.33' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<rect x='600.84' y='84.69' width='44.28' height='137.33' style='stroke-width: 0.75; stroke: none; fill: #F4F6F7;' />
+<line x1='468.00' y1='222.03' x2='645.12' y2='222.03' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='468.00' y1='187.69' x2='645.12' y2='187.69' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='468.00' y1='153.36' x2='645.12' y2='153.36' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='468.00' y1='119.03' x2='645.12' y2='119.03' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+<line x1='468.00' y1='84.69' x2='645.12' y2='84.69' style='stroke-width: 0.75; stroke: #E3E7EA;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='459.36' y='225.88' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='15.15px' lengthAdjust='spacingAndGlyphs'>0%</text>
+<text x='459.36' y='191.55' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.33px' lengthAdjust='spacingAndGlyphs'>25%</text>
+<text x='459.36' y='157.22' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.33px' lengthAdjust='spacingAndGlyphs'>50%</text>
+<text x='459.36' y='122.88' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='21.33px' lengthAdjust='spacingAndGlyphs'>75%</text>
+<text x='459.36' y='88.55' text-anchor='end' style='font-size: 10.80px;fill: #5B6670; font-family: "Liberation Sans";' textLength='27.50px' lengthAdjust='spacingAndGlyphs'>100%</text>
+<text transform='translate(417.60,153.36) rotate(-90)' text-anchor='middle' style='font-size: 11.40px;fill: #1B2228; font-family: "Liberation Sans";' textLength='117.66px' lengthAdjust='spacingAndGlyphs'>Datasets with p &lt; 0.05</text>
+</g>
+<g clip-path='url(#cpNDY4LjAwfDY0NS4xMnw3OS4yMHwyMjcuNTI=)'>
+<line x1='468.00' y1='215.16' x2='645.12' y2='215.16' style='stroke-width: 0.98; stroke: #8A949D; stroke-dasharray: 5.20,5.20;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='648.66' y='218.50' style='font-size: 9.36px;fill: #5B6670; font-family: "Liberation Sans";' textLength='13.13px' lengthAdjust='spacingAndGlyphs'>5%</text>
+</g>
+<g clip-path='url(#cpNDY4LjAwfDY0NS4xMnw3OS4yMHwyMjcuNTI=)'>
+<circle cx='486.60' cy='215.98' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='493.68' cy='215.43' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #EB6834;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='490.14' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='5.82px' lengthAdjust='spacingAndGlyphs'>0</text>
+</g>
+<g clip-path='url(#cpNDY4LjAwfDY0NS4xMnw3OS4yMHwyMjcuNTI=)'>
+<circle cx='530.88' cy='84.69' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='537.96' cy='214.34' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #EB6834;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='534.42' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.3</text>
+</g>
+<g clip-path='url(#cpNDY4LjAwfDY0NS4xMnw3OS4yMHwyMjcuNTI=)'>
+<circle cx='575.16' cy='84.69' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='582.24' cy='214.61' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #EB6834;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='578.70' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.6</text>
+</g>
+<g clip-path='url(#cpNDY4LjAwfDY0NS4xMnw3OS4yMHwyMjcuNTI=)'>
+<circle cx='619.44' cy='84.69' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='626.52' cy='214.06' r='4.05' style='stroke-width: 0.90; stroke: #FFFFFF; fill: #EB6834;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHwyODguMDA=)'>
+<text x='622.98' y='247.68' text-anchor='middle' style='font-size: 10.20px;fill: #1B2228; font-family: "Liberation Sans";' textLength='14.38px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='468.00' y='23.04' style='font-size: 12.00px; font-weight: bold;fill: #1B2228; font-family: "Liberation Sans";' textLength='175.82px' lengthAdjust='spacingAndGlyphs'>Diet, Nunavut only (truth = 0)</text>
+<circle cx='505.65' cy='51.13' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #2A78D6;' />
+<circle cx='505.65' cy='62.94' r='3.78' style='stroke-width: 0.75; stroke: #FFFFFF; fill: #EB6834;' />
+<text x='512.73' y='54.64' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='85.39px' lengthAdjust='spacingAndGlyphs'>RDA (Dubois et al.)</text>
+<text x='512.73' y='66.45' style='font-size: 9.84px;fill: #1B2228; font-family: "Liberation Sans";' textLength='99.17px' lengthAdjust='spacingAndGlyphs'>RDA (ID permutation)</text>
+<text x='464.46' y='247.68' text-anchor='end' style='font-size: 9.60px;fill: #1B2228; font-family: "Liberation Sans";' textLength='57.91px' lengthAdjust='spacingAndGlyphs'>cor(diet | ID)</text>
+</g>
+</svg>
+
+  <figcaption><b>Figure 5.</b> Share of datasets with p &lt; 0.05 in the study-matched simulation for the two analyses where diet has no effect: diet given geography (n = 128 samples, 24 individuals) and diet in Nunavut participants only (n = 60 samples, 15 individuals); square-root unweighted UniFrac, 500 replicates. Dashed line: nominal 5%. Individual means (green): one row per person (n = 24), the centroid of each person's samples related to their average diet, given geography.</figcaption>
+</figure>
+<div class="tablebox"><p class="meta" style="margin:0 0 6px">Table 1. Share of datasets with p &lt; 0.05 in the study-matched simulation. Columns: distance (E = Euclidean, U = UniFrac), diet within-person correlation ρ<sub>d</sub>, and true diet R² where it is not 0. Diet-alone rows test a real association, since diet and microbiome both differ by region. Paper values: diet 0.11, diet | geography 0.064, Nunavut only 0.169 (all p ≤ 0.004). Red: false-positive rate above 10% in a test whose null is true.</p><table><thead><tr><th>Analysis</th><th>E ρ<sub>d</sub>=0</th><th>E ρ<sub>d</sub>=0.3</th><th>E ρ<sub>d</sub>=0.6</th><th>E ρ<sub>d</sub>=0.8</th><th>E ρ<sub>d</sub>=0.6<br>R²=0.05</th><th>U ρ<sub>d</sub>=0</th><th>U ρ<sub>d</sub>=0.3</th><th>U ρ<sub>d</sub>=0.6</th><th>U ρ<sub>d</sub>=0.8</th><th>U ρ<sub>d</sub>=0.6<br>R²=0.05</th></tr></thead><tbody><tr><td>Diet · RDA (Dubois et al.)</td><td class="">95%</td><td class="">100%</td><td class="">100%</td><td class="">100%</td><td class="">100%</td><td class="">98%</td><td class="">100%</td><td class="">100%</td><td class="">100%</td><td class="">100%</td></tr><tr><td>Diet · individual means</td><td class="">18%</td><td class="">14%</td><td class="">12%</td><td class="">11%</td><td class="">31%</td><td class="">26%</td><td class="">17%</td><td class="">15%</td><td class="">14%</td><td class="">17%</td></tr><tr><td>Diet | geography · RDA (Dubois et al.)</td><td class="">6%</td><td class="bad">100%</td><td class="bad">100%</td><td class="bad">100%</td><td class="">100%</td><td class="">6%</td><td class="bad">100%</td><td class="bad">100%</td><td class="bad">100%</td><td class="">100%</td></tr><tr><td>Diet | geography · RDA (ID permutation)</td><td class="">5%</td><td class="">5%</td><td class="">4%</td><td class="">5%</td><td class="">72%</td><td class="">6%</td><td class="">4%</td><td class="">5%</td><td class="">6%</td><td class="">28%</td></tr><tr><td>Diet | geography · individual means</td><td class="">5%</td><td class="">4%</td><td class="">4%</td><td class="">4%</td><td class="">13%</td><td class="">5%</td><td class="">6%</td><td class="">6%</td><td class="">5%</td><td class="">5%</td></tr><tr><td>Nunavut only · RDA (Dubois et al.)</td><td class="">6%</td><td class="bad">84%</td><td class="bad">100%</td><td class="bad">100%</td><td class="">100%</td><td class="">4%</td><td class="bad">100%</td><td class="bad">100%</td><td class="bad">100%</td><td class="">100%</td></tr><tr><td>Nunavut only · RDA (ID permutation)</td><td class="">6%</td><td class="">4%</td><td class="">4%</td><td class="">4%</td><td class="">33%</td><td class="">5%</td><td class="">6%</td><td class="">5%</td><td class="">6%</td><td class="">16%</td></tr></tbody></table></div>
+
+<section class="prose">
+<h2>What this means for the 11%, 6.4% and 17%</h2>
+<p>The simulations do not show that diet has no effect in the Inuit data. They show that the published numbers cannot distinguish a diet effect from no effect. With 24 people, 16 diet variables and both diet and microbiome stable within people, a naive RDA gives an adjusted R² of 5–18%, with p ≈ 0.001, for a diet that does nothing beyond geography. The 6.4% (diet given geography) and the 17% (Nunavut only) are both within the range expected under that null, and the 11% also contains the diet–geography overlap.</p>
+<p>Two quantities would settle it from their data: the within-person correlation of the diet frequencies, and a reanalysis that respects individuals. Permuting whole individuals within region gives a valid p-value for the same model. Analysing individual means gives estimates of explained variation that are not inflated.</p>
+
+<h3>Suggested wording</h3>
+<blockquote class="suggest">
+<p>Dubois et al. (2017) investigated the association between diet and gut microbiome composition using distance-based redundancy analysis (RDA) of unweighted UniFrac distances, including repeated samples from 24 individuals. They reported that diet explained 11% of community variation, decreasing to 6.4% after accounting for geography. However, the RDA apparently did not account for repeated measurements from the same individuals. Because both dietary habits and microbiome composition are correlated across time points within individuals, this approach overstates the independent information available and inflates statistical significance. In simulations matching their design and analysis (128 samples from 24 individuals, 16 food categories, square-root unweighted UniFrac), a diet with no effect beyond geography was declared significant in all datasets once dietary habits were even modestly stable within individuals. Its adjusted R² averaged 5–13% after controlling for geography and 7–18% within Nunavut, comparable to the reported 6.4% and 17%. Permuting whole individuals restored correct p-values, and analysing individual means gave unbiased estimates of explained variation.</p>
+</blockquote>
+
+<h2>Limits of these simulations</h2>
+<ul>
+  <li>The number of samples per person in Dubois et al. is not reported. The study-matched runs assume 4 per Nunavut participant and 7–8 per Montréal participant (128 in total), based on Table S1. Figures 1–2 use equal numbers of samples per person; Figure 3 uses the same assumed split as the study-matched runs.</li>
+  <li>Diet variables are simulated as correlated-within-person normal variables. Real frequencies from a 48 h recall are counts (0, 0.5, 1, … per day), skewed, correlated with each other, and some traditional foods are eaten only in Nunavut. This changes the effective number of predictors but not the mechanism.</li>
+  <li>The UniFrac runs use a random tree and simple presence/absence sampling. The study-matched runs and the right panel of Figure 3 use square-root UniFrac, as in the paper; the left panel of Figure 3 uses untransformed distances.</li>
+  <li>The direction of the R² bias is upward when the diet effect is the same within and between people. If the within-person and between-person effects differ in sign, or if unmeasured person-level factors confound diet, the naive estimate can be biased in either direction.</li>
+  <li>Diet's within-person correlation is not reported for this study, so the study-matched results are shown across a range (0–0.8).</li>
+  <li>The paper does not name the vegan function or the permutation scheme. We assume a distance-based RDA (as <code>capscale</code> or <code>dbrda</code>) with free permutations, the vegan default.</li>
+</ul>
+
+<h2>Files</h2>
+<ul class="files">
+  <li><code>sim_repeated_rda_lib.R</code>: shared dbRDA, permutation and UniFrac functions</li>
+  <li><code>sim_repeated_rda.R</code>: Figures 1–2 (24 people, equal samples per person, Euclidean distance)</li>
+  <li><code>sim_k1.R</code>: one sample per person (k = 1) in Figure 2</li>
+  <li><code>sim_unifrac_paper.R</code>: Figure 3 (the paper's sample sizes and 16 diet variables, UniFrac)</li>
+  <li><code>sim_dubois_calibrated.R</code>: Figures 4–5 and Table 1 (study-matched)</li>
+  <li><code>plot_sim_results.R</code>: draws the figures (PNG, PDF, SVG); <code>report/build_report.py</code> builds this page</li>
+  <li>Run with <code>OPENBLAS_NUM_THREADS=1 Rscript --vanilla &lt;script&gt;</code>. R 4.3.3, vegan 2.6-4. Code: <a href="https://github.com/aalbrechtsen/Rfun/tree/master/sim_repeated_rda">github.com/aalbrechtsen/Rfun</a></li>
+</ul>
+</section>
+</div>
+
